@@ -1,0 +1,1 @@
+To use this repo for your own commute, edit variables `HOME` and `WORK` in `get_travel_times.py`. Get a Google Maps API key and make a file `local/api_key.py` with the variable `KEY='your_key_here'`. Then run `get_travel_times.py` and you should be able to use the jupyter notebook to see plots for your commute.  
