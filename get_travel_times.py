@@ -12,7 +12,14 @@ WORK = '2505 SE 11th Ave, Portland, OR 97202, USA'
 TRAFFIC_MODELS = ['optimistic', 'best_guess', 'pessimistic']
 
 
-# return duration_in_traffic for given start, end, departure time, and traffic model
+# params:
+#   gmaps: google maps client object
+#   start, end: addresses for home and work (strings)
+#   departure_time: datetime object
+#   traffic_model: one of 'optimistic', 'best_guess', 'pessimistic'
+# return 
+#   duration_in_traffic (int) in seconds
+# Note: will be called ~1000 times; Google maps API daily free request limit is 2500
 def get_single_data_point(gmaps, start, end, departure_time, traffic_model):
     result =  gmaps.distance_matrix(start, end, 
         mode='driving', departure_time=departure_time, traffic_model=traffic_model)
@@ -23,8 +30,11 @@ def get_single_data_point(gmaps, start, end, departure_time, traffic_model):
         return -1
 
 
-# 6 hour range for every weekday starting at either 6am (direction='going') or 2pm 
-# (direction='returning'), every 10 minutes
+# params: 
+#   direction: either 'going' or 'returning'
+# returns:
+#   List of datetime objects: 6 hour range for every weekday starting at either 6am (direction='going')
+#   or 2pm (direction='returning'), every 10 minutes
 def generate_datetimes(direction):
     if direction == 'going':
         start_hour = 6
@@ -41,6 +51,12 @@ def generate_datetimes(direction):
     #             for hour in range(0, 6)]
 
 
+# params:
+#   gmaps: google maps client object
+#   start, end: addresses for home and work (strings)
+#   datetimes: list of datetime objects
+# returns:
+#   DataFrame with traffic models for columns, datetimes for rows, and travel times for values
 def generate_df(gmaps, start, end, datetimes):
     optimistic = [get_single_data_point(gmaps, start, end, time, 'optimistic') 
                     for time in datetimes]
@@ -56,6 +72,9 @@ def generate_df(gmaps, start, end, datetimes):
                         columns=TRAFFIC_MODELS)
 
 
+# params:
+#   gmaps: google maps client object
+# Queries google maps api for morning commute, creates DataFrame and saves as pickle file
 def get_morning_data(gmaps):
     start, end = HOME, WORK
     datetimes = generate_datetimes('going')
@@ -63,6 +82,9 @@ def get_morning_data(gmaps):
     going_df.to_pickle('going_df.p')
 
 
+# params:
+#   gmaps: google maps client object
+# Queries google maps api for afternoon commute, creates DataFrame and saves as pickle file
 def get_afternoon_data(gmaps):
     start, end = WORK, HOME
     datetimes = generate_datetimes('returning')
@@ -70,37 +92,7 @@ def get_afternoon_data(gmaps):
     returning_df.to_pickle('returning_df.p')
 
 
-def get_data(gmaps):
-    get_morning_data(gmaps)
-    get_afternoon_data(gmaps)
-
-
-def test(gmaps):
-    # test generate_datetimes
-    # pprint(generate_datetimes())
-
-    # test generate_datetimes_going(), generate_datetimes_returning()
-    # pprint(generate_datetimes_going())
-    # pprint(generate_datetimes_returning())
-    # test_combos = [(d, t) for d in generate_datetimes_going() for t in TRAFFIC_MODELS]
-    # pprint(test_combos)
-
-    # # test get_single_data_point for each test_combo
-    # for item in test_combos:
-    #     departure_time, traffic_model = item
-    #     print(departure_time.strftime('%I:%M:%S %p') + ', ' + traffic_model)
-    #     print(get_single_data_point(gmaps, HOME, WORK, departure_time, traffic_model))
-    #     print()
-
-    # test get_morning_data()
-    get_morning_data(gmaps)
-
-
 if __name__ == '__main__':
     gmaps = googlemaps.Client(key=api_key.KEY)
-    get_data(gmaps)
-
-
-# notes:
-# example of indexing a dataframe
-# df[df.index > datetime(2017, 10, 2, 8, 0, 0, 0)]
+    get_morning_data(gmaps)
+    get_afternoon_data(gmaps)
