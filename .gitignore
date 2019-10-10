@@ -1,0 +1,5 @@
+local.py
+.python-version
+.ipynb_checkpoints
+.pyc
+__pycache__/

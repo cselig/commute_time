@@ -1,0 +1,4 @@
+pandas
+googlemaps
+jupyter
+matplotlib
